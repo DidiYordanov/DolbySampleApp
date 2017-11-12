@@ -1,0 +1,176 @@
+<!DOCTYPE html><!--HTML5 doctype-->
+<html>
+<head>
+    <title>Your New Application</title>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src * data:; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+    <style type="text/css">
+        /* Prevent copy paste for all elements except text fields */
+        *  { 
+            -webkit-user-select:none; 
+            -webkit-tap-highlight-color:rgba(255, 255, 255, 0); 
+        }
+        input, textarea  { 
+            -webkit-user-select:text; 
+        }
+        body { 
+            background-color:darkgrey; 
+            color:black 
+        }
+        button {
+            display: block;
+            font-size: 150%;
+            padding: 5px;
+            margin: auto;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            width: 90%;
+        }
+        audio {
+            margin: auto;
+            margin-top: 10px;
+        }
+        #dolby-hardware, #dolby-status {
+            padding: 0.5rem;
+            text-align: center;
+            background: lightgrey;
+        }
+        #profile-selection {
+            width: 50%;
+            margin: auto;
+            padding: 10px;
+            font-size: 150%;
+        }
+        #dolby-status {
+            display: none;
+        }
+    </style>
+    <!--<script src='intelxdk.js'></script>-->
+    <script src='cordova.js'></script>
+    <!-- test/mock.js includes a mock of the dolby object for testing when the dolby plugin or hardware isn't available -->
+    <!-- uncomment next line to use for testing/debugging -->
+    <!-- <script src='test/mock.js'></script> -->
+    <script src="https://s3-us-west-1.amazonaws.com/dolbydeveloper/1.1.0/js/dolby.min.js"></script>
+
+    <script type="text/javascript">
+        function showDolbyStatus(deviceHasDolby) {
+            var e = dolbyStatusElmt();
+
+            if (!deviceHasDolby) {
+                e.style.display = "none";
+                return;
+            }
+
+            e.style.display = "block";
+
+            function success(status) {
+                if (status) {
+                    showOn();
+                } else {
+                    showOff();
+                }
+            }
+            function err() {
+                //alert("unexpected error");
+                showOff();
+            }
+            dolby.dap.isEnabled(success, err);
+        }
+
+        function showDolbyHardware(deviceHasDolby) {
+            var e = document.getElementById('dolby-hardware');
+            if (deviceHasDolby) {
+                e.innerHTML="Device supports Dolby Audio";
+                e.style.background = "rgba(200,255,200,0.9)";
+            } else {
+                e.innerHTML="Device doesn't support Dolby Audio";
+                e.style.background = "rgba(255,100,100,0.9)";
+            }
+            setTimeout(function () {showDolbyStatus(deviceHasDolby)}, 0);
+            //alert("Dolby Status set");
+        }
+
+        function dolbyStatusElmt() {
+            return document.getElementById('dolby-status');
+        }
+
+        function showOn() {
+            var e = dolbyStatusElmt();
+            e.style.background = "rgba(200,255,200,0.9)";
+            e.innerHTML = "Dolby Audio is enabled";
+        }
+        function showOff() {
+            var e = dolbyStatusElmt();
+            e.style.background = "rgba(255,100,100,0.9)";
+            e.innerHTML = "Dolby Audio is disabled";
+        }
+
+        function on() {
+            dolby.dap.setEnabled(true);
+            showOn();
+        }
+        function off() {
+            dolby.dap.setEnabled(false);
+            showOff();
+        }
+
+        function initDolby() {
+            console.log('initializing dolby');
+            
+            if (typeof dolby === 'undefined') {
+                var e = document.getElementById('dolby-hardware');
+                alert("Dolby plugin not present");
+
+                e.innerHTML="Dolby plugin not present";
+                return;
+            }
+            function onDsConnected() {
+                alert("Device has Dolby capabilities");
+                showDolbyHardware(true);
+            }
+
+            function onFail(err) {
+                alert("Device doesn't support Dolby Capabilities");
+                showDolbyHardware(false);
+            }
+            dolby.dap.initialize(dolby.DapProfile[getProfileUISetting()], onDsConnected, onFail);
+        }
+
+        function getProfileUISetting () {
+            return (document.getElementById('profile-selection') || {value: 'GAME'}).value;
+        }
+
+        function changeProfile(profile) {
+            dolby.dap.setProfile(dolby.DapProfile[profile]);
+        }
+
+        document.addEventListener('deviceready', initDolby);
+        // document.addEventListener('DOMContentLoaded', initDolby);
+    </script>
+</head>
+<body>
+    <header>
+        <div id="dolby-hardware">
+            Checking hardware support
+        </div>
+        <div id="dolby-status">
+            Checking Dolby status
+        </div>
+        <button onclick="on()">On</button>
+        <button onclick="off()">Off</button>
+
+        Profile:
+        <select name="Profile" id="profile-selection" onchange="changeProfile(this.value)">
+            <option value='GAME'>Game</option>
+            <option value='MUSIC'>Music</option>
+            <option value='VOICE'>Voice</option>
+            <option value='MOVIE'>Movie</option>
+        </select>
+
+    </header>
+    <audio controls>
+        <source src='audio/audio_dolby_living_room.m4a' type='audio/mp4'></source>
+    </audio>
+</body>
+</html>
